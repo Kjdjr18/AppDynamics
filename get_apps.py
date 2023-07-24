@@ -2,10 +2,10 @@
 import requests
 
 # Replace with your AppDynamics controller info and API token
-CONTROLLER_HOST = "metsilabs-nfr.saas.appdynamics.com"
+CONTROLLER_HOST = <your_host>
 CONTROLLER_PORT = 443
 API_TOKEN = <your_token>
-ACCOUNT_NAME = "metsilabs-nfr"
+ACCOUNT_NAME = <your_account>
 
 
 def get_applications():
