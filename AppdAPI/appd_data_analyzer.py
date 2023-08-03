@@ -2,20 +2,27 @@ import requests
 import xml.etree.ElementTree as ET
 import pandas as pd
 import time
+import certifi
 import os
+from postman_template import create_postman_json
+
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
 # Replace with your AppDynamics controller info and API token
-CONTROLLER_HOST = ""    # controller host domain 
-CONTROLLER_PORT = 443   # Controller Port, Default 443
-API_TOKEN = ""          # Api Token  
-ACCOUNT_NAME = ""       # controller account name
-APPLICATION_NAME = ""   # Replace with your application name or ID
-DURATION_MIN = "43200"  # 1 month
-
+CONTROLLER_HOST = "controller host"
+CONTROLLER_PORT = 443
+API_TOKEN = "api token here"
+ACCOUNT_NAME = "account name here"
+CLIENT_ID = "client ID"
+APPLICATION_ID = "app ID"  # Replace with your application ID
+TIER_ID="Tier ID here"
+DURATION_MIN = 0 # Duration in min
+RULE_ID = "HR ID HERE" # replace with your health rule ID
+sec = 3 # adjust delay between requests here
 
 def get_metric_data(metric_path):
     # AppDynamics API endpoint to get metric data
-    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/rest/applications/{APPLICATION_NAME}/metric-data"
+    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/rest/applications/{APPLICATION_ID}/metric-data"
 
     # API request headers with the API token
     headers = {
@@ -32,7 +39,7 @@ def get_metric_data(metric_path):
 
     try:
         # Send the GET request with the API token
-        response = requests.get(url, headers=headers, params=params, verify=True)
+        response = requests.get(url, headers=headers, params=params, verify=certifi.where())
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
@@ -53,7 +60,7 @@ def get_metric_data(metric_path):
 
 def get_business_transactions_data():
     # AppDynamics API endpoint to get business transactions data
-    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/rest/applications/{APPLICATION_NAME}/business-transactions"
+    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/rest/applications/{APPLICATION_ID}/business-transactions"
 
     # API request headers with the API token
     headers = {
@@ -69,7 +76,7 @@ def get_business_transactions_data():
 
     try:
         # Send the GET request with the API token
-        response = requests.get(url, headers=headers, params=params, verify=False)
+        response = requests.get(url, headers=headers, params=params, verify=certifi.where())
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
@@ -89,7 +96,7 @@ def get_business_transactions_data():
                 data.append({
                     'id': bt.find('id').text,
                     'name': bt_name,
-                    'app': APPLICATION_NAME,
+                    'app': APPLICATION_ID,
                     'tier': tier_name,
                     'entryPointType': bt.find('entryPointType').text,
                     'Total Calls': total_calls
@@ -114,8 +121,8 @@ def get_business_transactions_data():
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to the AppDynamics API: {e}")
 
-    # Wait for 5 seconds
-    time.sleep(5)
+    # delay prior to next request
+    time.sleep(sec)
 
     # Get the total number of calls and errors
     total_calls = get_metric_data("Overall Application Performance|Calls per Minute")
@@ -146,4 +153,11 @@ def get_business_transactions_data():
 
 
 if __name__ == "__main__":
+    postman_collection = "y" #"n"
+    #postman_collection = input("would you like to create a postman collection? enter y or n, json file will be created in ~/Desktop/appd_api_results/")
+    if postman_collection == "y":
+        create_postman_json(CONTROLLER_HOST, CONTROLLER_PORT, CLIENT_ID, ACCOUNT_NAME, API_TOKEN, APPLICATION_ID, DURATION_MIN)
+        print ("postman collection and environment json files created, open postman and import both files")
+    else:
+        pass
     get_business_transactions_data()
