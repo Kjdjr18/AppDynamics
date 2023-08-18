@@ -1,25 +1,10 @@
+# delete_entities.py
+
 import requests
 import certifi
-import os
 
-#WARNING, THIS SCRIPT CAN DELETE ALL POLICIES, HEALTH RULES AND ACTIONS.
-
-os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
-
-CONTROLLER_HOST = "account-name.saas.appdynamics.com" # prepend .saas.appdynamics.com with your account name
-CONTROLLER_PORT = 443
-API_TOKEN = "API-TOKEN"  #add API Token generated here
-ACCOUNT_NAME = "account-name"  #add your account name here
-CLIENT_ID = "client-id@account-name" #replace with your client ID @ account name
-APPLICATION_ID = "12345"  #Add your application ID
-
-WHITE_LIST_POLICIES = ["", ""]
-WHITE_LIST_ACTIONS = ["", ""]
-WHITE_LIST_HEALTH_RULES = ["12345", "23456", "34567", "45678", "56789"]
-
-
-def get_entities(endpoint):
-    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/alerting/rest/v1/applications/{APPLICATION_ID}/{endpoint}"
+def get_entities(endpoint, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN):
+    url = f"{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/alerting/rest/v1/applications/{APPLICATION_ID}/{endpoint}"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {API_TOKEN}"
@@ -35,9 +20,8 @@ def get_entities(endpoint):
         print(f"Error connecting to the AppDynamics API: {e}")
         return None
 
-
-def delete_entity(endpoint, entity_id):
-    url = f"https://{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/alerting/rest/v1/applications/{APPLICATION_ID}/{endpoint}/{entity_id}"
+def delete_entity(endpoint, entity_id, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN):
+    url = f"{CONTROLLER_HOST}:{CONTROLLER_PORT}/controller/alerting/rest/v1/applications/{APPLICATION_ID}/{endpoint}/{entity_id}"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {API_TOKEN}"
@@ -51,9 +35,8 @@ def delete_entity(endpoint, entity_id):
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to the AppDynamics API: {e}")
 
-
-def process_entities(endpoint, whitelist):
-    entities = get_entities(endpoint)
+def process_entities(endpoint, whitelist, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN):
+    entities = get_entities(endpoint, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN)
     delete_list = []
     preserve_list = []
 
@@ -71,13 +54,15 @@ def process_entities(endpoint, whitelist):
     delete_confirmation = input("Do you want to delete the listed items? (y/n): ")
     if delete_confirmation.lower() == 'y':
         for entity_id in delete_list:
-            delete_entity(endpoint, entity_id)
+            delete_entity(endpoint, entity_id, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN)
     elif delete_confirmation.lower() == 'n':
         print(f"List of IDs preserved for {endpoint}: {preserve_list}")
     else:
         print("Invalid input. No action taken.")
+    print('\n')
 
 
-process_entities('policies', WHITE_LIST_POLICIES)
-process_entities('actions', WHITE_LIST_ACTIONS)
-process_entities('health-rules', WHITE_LIST_HEALTH_RULES)
+def delete_all_entities(CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN, WHITE_LIST_POLICIES=[],WHITE_LIST_ACTIONS=[],WHITE_LIST_HEALTH_RULES=[]):
+    process_entities('policies', WHITE_LIST_POLICIES, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN)
+    process_entities('actions', WHITE_LIST_ACTIONS, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN)
+    process_entities('health-rules', WHITE_LIST_HEALTH_RULES, CONTROLLER_HOST, CONTROLLER_PORT, APPLICATION_ID, API_TOKEN)
